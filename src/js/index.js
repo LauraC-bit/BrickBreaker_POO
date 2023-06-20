@@ -6,8 +6,6 @@ import SpaceBar from "./SpaceBar.js";
 const main = () => {
   let canvasDom;
   let ctx;
-  let countY = 0;
-  let countX = 0;
   let brickRowCount = 3;
   let brickColumnCount = 5;
   let brickWidth = 85;
@@ -44,12 +42,20 @@ const main = () => {
     ctx.fillStyle = "#F8E8D1";
     ctx.fillRect(0, 0, canvasDom.width, canvasDom.height);
     ctx.fillStyle = circle.color;
+
+    collisionDetection();
     displayBar();
     displayCircle();
     displayText();
     drawBricks();
-    collisionDetection();
   }
+
+  let ballDirection = {
+    top: -1, //equivaut a --
+    bottom: 1, //equivaut a ++ donc incrementer donc vers le bas puisque 0 est en haut;
+    right: -1,
+    left: 1,
+  };
 
   function displayText() {
     ctx.font = "bold 28px Verdana";
@@ -76,70 +82,49 @@ const main = () => {
     // ctx.stroke();
   }
 
-  let ballDirection = {
-    top: -1, //equivaut a --
-    bottom: 1, //equivaut a ++ donc incrementer donc vers le bas puisque 0 est en haut;
-    right: -1,
-    left: 1,
-  };
-  let currentDirectionVertical = ballDirection.top;
-  let currentDirectionHorizontal = ballDirection.right;
-
-  const mooveCircle = () => {
-    let requestID = window.requestAnimationFrame(mooveCircle);
-    if (
-      circle.x >= spaceBar.x &&
-      circle.x <= spaceBar.x + spaceBar.width &&
-      circle.y + circle.radius >= spaceBar.y
-    ) {
-      currentDirectionVertical = ballDirection.top;
-    }
-    if (circle.y >= canvasDom.height - circle.radius) {
-      alert("Game over !");
-      window.cancelAnimationFrame(requestID);
-      document.location.reload();
-    }
-    if (circle.x >= canvasDom.width - circle.radius) {
-      currentDirectionHorizontal = ballDirection.right;
-    }
-    if (circle.y <= 0 + circle.radius) {
-      currentDirectionVertical = ballDirection.bottom;
-    }
-    if (circle.x <= 0 + circle.radius) {
-      currentDirectionHorizontal = ballDirection.left;
-    }
-    countY = countY + 10 * currentDirectionVertical;
-    countX = countX + 10 * currentDirectionHorizontal;
-    circle.y = countY;
-    circle.x = countX;
-    display();
-  };
-
-  document.addEventListener("keydown", mooveSpaceBar);
-
-  function mooveSpaceBar(e) {
-    switch (e.key) {
-      case "ArrowRight":
-        if (spaceBar.x < canvasDom.width - spaceBar.width) {
-          spaceBar.x = spaceBar.x + 30;
+  function collisionDetection() {
+    for (let c = 0; c < brickColumnCount; c++) {
+      for (let r = 0; r < brickRowCount; r++) {
+        let b = bricks[c][r];
+        if (
+          b.isBroken === false &&
+          circle.x > b.x &&
+          circle.x < b.x + brickWidth &&
+          circle.y > b.y &&
+          circle.y < b.y + brickHeight
+        ) {
+          circle.currentDirectionVertical =
+            circle.currentDirectionVertical * -1;
+          bricks[c][r].isBroken = true;
         }
-        break;
-
-      case "ArrowLeft":
-        if (spaceBar.x > 0) {
-          spaceBar.x = spaceBar.x - 30;
-        }
-        break;
+      }
     }
   }
 
-  document.addEventListener("keypress", start);
+  document.addEventListener("keydown", (event) => {
+    spaceBar.moove(event, canvasDom);
+  });
+
+  document.addEventListener("keypress", (e) => {
+    start(e);
+  });
 
   function start(e) {
+    let game_over = false;
     if (e.key === " ") {
-      console.log("here");
       display();
-      mooveCircle();
+      let moove = () => {
+        game_over = circle.mooveCircle(
+          ballDirection,
+          spaceBar,
+          canvasDom,
+          display
+        );
+        if (game_over) return;
+        // quand une fonction "return" rien de ce qui est écrit après ne se déclenche.
+        window.requestAnimationFrame(moove);
+      };
+      moove();
     }
   }
   display();
@@ -165,26 +150,6 @@ const main = () => {
   }
 
   drawBricks();
-
-  function collisionDetection() {
-    for (let c = 0; c < brickColumnCount; c++) {
-      for (let r = 0; r < brickRowCount; r++) {
-        let b = bricks[c][r];
-        if (
-          b.isBroken === false &&
-          circle.x > b.x &&
-          circle.x < b.x + brickWidth &&
-          circle.y > b.y &&
-          circle.y < b.y + brickHeight
-        ) {
-          currentDirectionVertical = currentDirectionVertical * -1;
-          bricks[c][r].isBroken = true;
-        }
-      }
-    }
-  }
-
-  collisionDetection();
 };
 
 window.addEventListener("load", main);

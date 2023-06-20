@@ -40,6 +40,22 @@ class SpaceBar {
   set height(in_height) {
     this._height = in_height;
   }
+
+  moove(e, canvasDom) {
+    switch (e.key) {
+      case "ArrowRight":
+        if (this.x < canvasDom.width - this.width) {
+          this.x = this.x + 30;
+        }
+        break;
+
+      case "ArrowLeft":
+        if (this.x > 0) {
+          this.x = this.x - 30;
+        }
+        break;
+    }
+  }
 }
 
 export default SpaceBar;
